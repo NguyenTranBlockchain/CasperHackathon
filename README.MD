@@ -101,109 +101,84 @@ casper-client get-deploy --node-address http://localhost:11101 b714253d77fad534d
 
 ![](/images/1.3.png)
 
-### Notes
-* Had some issues with following the instructions on [CasperLabs Docs on Getting Started](https://docs.casperlabs.io/en/latest/dapp-dev-guide/setup-of-rust-contract-sdk.html) as it referenced v1.3.2 and I was running client v1.3.3. Found some help on Discord where instructions were given to use `make prepare` `make build-contract` and `make test` instead.
-* Also had issues with running `make test` with below output. Euan on Discord helped to troubleshoot and turns out the issue was my project was built inside a shared folder (using Ubuntu 20.04 on Virtualbox on W10). The lesson there is, don't build your project on a shared folder!
+
+##  Complete one of the existing tutorials for writing smart contracts
+### A Counter Contract Tutorial 
+
 ```
-running 2 tests
-test tests::should_error_on_missing_runtime_arg - should panic ... FAILED
-test tests::should_store_hello_world ... FAILED
-
-failures:
-
----- tests::should_error_on_missing_runtime_arg stdout ----
-thread 'main' panicked at 'Expected successful execution result, but instead got: [
-    Failure {
-        error: WasmPreprocessing(
-            Deserialize(
-                "Invalid magic number at start of file",
-            ),
-        ),
-        effect: ExecutionEffect {
-            ops: {},
-            transforms: {},
-        },
-        transfers: [],
-        cost: Gas(
-            0,
-        ),
-    },
-]',
+git clone https://github.com/casper-ecosystem/counter
+cd counter
 ```
- 
-## Complete one of the existing tutorials for writing smart contracts
-### Output
-![](https://i.imgur.com/zIu0wXf.png)
 
-
-### Notes
-* Some trouble at trying to run `casper-client get-state-root-hash --node-address http://localhost:11101` on the [Counter Walkthrough](https://docs.casperlabs.io/en/latest/dapp-dev-guide/tutorials/counter/walkthrough.html), but found someone had same issue on Discord and Maciej suggested to do the following, which seemed to work for me:
 ```
-1. Open this link: https://repo.casperlabs.io/
-2. Use the instruction to add our repo to your apt dependencies (assuming your using ubuntu).
-3. sudo apt install casper-client
-``` 
+casper-client get-state-root-hash --node-address http://localhost:11101
+```
 
-* Some more trouble following tutorial, this time on the following. Turns out `[ACCOUNT_HASH]` is actually asking for the `faucet a/c key` not the `faucet a/c hash` (although the fact it's asking for the account **hash** does confuse things)
+![](/images/2.0.png)
+
+### Get account hash
+![](/images/2.1.png)
+
 ```
 casper-client query-state \
     --node-address http://localhost:11101 \
-    --state-root-hash [STATE_ROOT_HASH] \
-    --key [ACCOUNT_HASH]
+    --state-root-hash d07877bfffdf12265aa13173232392827be0983ca400ffb5286ca365cc9efa7f \
+    --key account-hash-bc649423502a04c91c10713ead12868918b9d16961029d96f0d44298c79354d0 
+```
+![](/images/2.2.png)
+
+```
+make prepare
+make test
 ```
 
-* Yes, im an amateur :) more issues. this time i get the following when trying to `casper-client put-deploy`, and it's because im following the tutorial and after cloning the *counter* repo, it doesnt tell you to `cd` into it. After `cd counter`,`make prepare`, `make test` and repeating `casper-client put-deploy` ... we're golden (for now lol, a lot to learn here)
-* interesting observation in the end was that when i was calling the contract to increase counter, it was successful but the `state_root_hash` didn't change twice, and the `-q "counter/count"` was coming back with zero, but trying it a second time the counter came back as 2. What happened first time? :man-shrugging: 
+![](/images/2.3.png)
 
-## Demonstrate key management concepts by modifying the client in the Multi-Sig tutorial to address one of the additional scenarios
-I will be running Additional Scenario 5: managing accounts with multiple keys 
-### Output
-Add my scenario to package.json
-![](https://i.imgur.com/LeqO8U6.png)
-Create new script for scenario-four
-![](https://i.imgur.com/XTTvi2v.png)
-Modify the code to match the scenario
-![](https://i.imgur.com/1M2U7cP.png)
+### Deploy
+```
+casper-client put-deploy \
+    --node-address http://localhost:11101 \
+    --chain-name casper-net-1 \
+    --secret-key /working_space/casper-node/utils/nctl/assets/net-1/faucet/secret_key.pem \
+    --payment-amount 5000000000000 \
+    --session-path ./target/wasm32-unknown-unknown/release/counter-define.wasm
+```
+![](/images/2.4.png)
 
-Run the script
-![](https://i.imgur.com/FZGCF9t.png)
-![](https://i.imgur.com/8FSgQvc.png)
+```
+casper-client get-state-root-hash --node-address http://localhost:11101
+casper-client query-state \
+	--node-address http://localhost:11101 \
+	--state-root-hash 4f4087aadac822e7c95c017a5b33bd334668c94405ff48e4bc72eb33864e376e \
+	--key account-hash-bc649423502a04c91c10713ead12868918b9d16961029d96f0d44298c79354d0 \
+	-q counter/count
+```
+
+![](/images/2.5.png)
+
+### Increase number
+```
+casper-client put-deploy \
+    --node-address http://localhost:11101 \
+    --chain-name casper-net-1 \
+    --secret-key /working_space/casper-node/utils/nctl/assets/net-1/faucet/secret_key.pem \
+    --payment-amount 5000000000000 \
+    --session-name "counter" \
+    --session-entry-point "counter_inc"
+```
+
+![](/images/2.6.png)
 
 
+### Check status
+```
+casper-client get-state-root-hash --node-address http://localhost:11101
+casper-client query-state \
+	--node-address http://localhost:11101 \
+	--state-root-hash 6117866daa9274f922c0ee652b816c30aba7a164905341a7855aa5ee009950f3 \
+	--key account-hash-bc649423502a04c91c10713ead12868918b9d16961029d96f0d44298c79354d0 \
+	-q counter/count
+```
 
-### Notes
-* Surprisingly a lot more straight forward than earlier parts
+![](/images/2.7.png)
 
-## Learn to transfer tokens to an account on the Casper Testnet. 
-### Output
-![](https://i.imgur.com/23kphmg.png)
-
-`deploy_hash": "ed9db2b202edd6bf5e387a80479bc1d36b684792300743008a0a9126513db01a`
-
-![](https://i.imgur.com/nqkaQWu.png)
-
-### Notes
-* The instructions didn't specify that we needed to put `--payment-amount 10000` and was getting an error as per below.
-
-![](https://i.imgur.com/4P4ZhVi.png)
-
-
-
-## Learn to Delegate and Undelegate on the Casper Testnet. 
-### Output
-#### Delegating
-![](https://i.imgur.com/NeqxEfD.png)
-![](https://i.imgur.com/P46tTld.png)
-![](https://i.imgur.com/wDTtW5b.png)
-![](https://i.imgur.com/0NkLEVc.png)
-![](https://i.imgur.com/Wh5PNSl.png)
-![](https://i.imgur.com/l7WJb6i.png)
-![](https://i.imgur.com/TbaXGvR.png)
-
-#### Undelegating
-![](https://i.imgur.com/2jMQ26f.png)
-![](https://i.imgur.com/Ji1mA0k.png)
-![](https://i.imgur.com/8ugOvpb.png)
-![](https://i.imgur.com/8kjbo0F.png)
-![](https://i.imgur.com/RJzJu3X.png)
-![](https://i.imgur.com/tJ11PGL.png)
