@@ -68,9 +68,11 @@ rustup target add --toolchain $(cat rust-toolchain) wasm32-unknown-unknown
 
 cd contract
 cargo build --release
+```
 
 ![](/images/1.0.png)
 
+```
 cd ..
 make test
 ```
