@@ -182,3 +182,38 @@ casper-client query-state \
 
 ![](/images/2.7.png)
 
+
+## Demonstrate key management concepts by modifying the client in the Multi-Sig tutorial to address one of the additional scenarios
+```
+git clone https://github.com/casper-ecosystem/keys-manager
+cd keys-manager
+
+rustup install $(cat rust-toolchain)
+rustup target add --toolchain $(cat rust-toolchain) wasm32-unknown-unknown
+cd contract
+cargo build --release
+```
+
+![](/images/3.0.png)
+![](/images/3.1.png)
+
+```
+cd keys-manager/client/
+touch .env
+vim .env
+```
+Put content to .env file
+```
+BASE_KEY_PATH=/working_space/casper-node/utils/nctl/assets/net-1/faucet/
+NODE_URL=http://localhost:11101/rpc
+```
+
+![](/images/3.2.png)
+
+```
+npm i
+```
+
+Add command to package.json
+
+"start:second": "node -r dotenv/config ./src/second.js"
